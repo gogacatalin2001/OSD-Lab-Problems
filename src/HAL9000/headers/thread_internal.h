@@ -90,6 +90,9 @@ typedef struct _THREAD
     PVOID                   UserStack;
 
     struct _PROCESS*        Process;
+
+    // The number of times the  thread yielded execution
+    DWORD                   TimesYielded;   // THREADS - 2
 } THREAD, *PTHREAD;
 
 //******************************************************************************

@@ -418,7 +418,7 @@ ThreadCreateEx(
 
     *Thread = pThread;
 
-    LOG("Thread [0x%X] created!\n", pThread->Id);
+    LOG("Thread [tid = 0x%X] created!\n", pThread->Id);
 
     return status;
 }
@@ -488,6 +488,7 @@ ThreadYield(
     if (!bForcedYield)
     {
         pThread->TickCountEarly++;
+        pThread->TimesYielded++;
     }
     pThread->State = ThreadStateReady;
     _ThreadSchedule();
@@ -562,6 +563,8 @@ ThreadExit(
     {
         LockRelease(&pThread->BlockLock, INTR_OFF);
     }
+
+    LOG("Thread [tid = 0x%X] yielded %u times\n", pThread->Id, pThread->TimesYielded);
 
     pThread->State = ThreadStateDying;
     pThread->ExitStatus = ExitStatus;
@@ -798,6 +801,7 @@ _ThreadInit(
         pThread->Id = _ThreadSystemGetNextTid();
         pThread->State = ThreadStateBlocked;
         pThread->Priority = Priority;
+        pThread->TimesYielded = 0;
 
         LockInit(&pThread->BlockLock);
 
