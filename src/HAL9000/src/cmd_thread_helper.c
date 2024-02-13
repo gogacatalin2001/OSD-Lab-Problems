@@ -671,6 +671,21 @@ _CmdHelperPrintThreadFunctions(
     }
 }
 
+
+STATUS
+(__cdecl DisplayThreadId) (
+    IN      PLIST_ENTRY     ListEntry,
+    IN_OPT  PVOID           FunctionContext
+    )
+{
+    UNREFERENCED_PARAMETER(FunctionContext);
+    PTHREAD pThread = CONTAINING_RECORD(ListEntry, THREAD, ChildThreadListEntry);
+    LOGL("tid [0x%X]\n", pThread->Id);
+
+    return STATUS_SUCCESS;
+}
+
+
 static
 STATUS
 (__cdecl _CmdThreadPrint) (
@@ -679,11 +694,14 @@ STATUS
     )
 {
     PTHREAD pThread;
+    INTR_STATE oldState;
+    STATUS status;
 
     ASSERT( NULL != ListEntry );
     ASSERT( NULL == FunctionContext );
 
     pThread = CONTAINING_RECORD(ListEntry, THREAD, AllList );
+    status = STATUS_SUCCESS;
 
     LOG("%6x%c", pThread->Id, '|');
     LOG("%19s%c", pThread->Name, '|');
@@ -695,7 +713,23 @@ STATUS
     LOG("%9x%c", pThread->Process->Id, '|');
     LOG("\n");
 
-    return STATUS_SUCCESS;
+    // THREADS - 3
+    if (!IsListEmpty(&pThread->ChildThreads))
+    {
+        LOG("--------CHILDREN-------------\n");
+
+        LockAcquire(&pThread->ChildThreadsLock , &oldState);
+        status = ForEachElementExecute(&pThread->ChildThreads,
+            DisplayThreadId,
+            FunctionContext,
+            FALSE
+        );
+        LockRelease(&pThread->ChildThreadsLock, oldState);
+
+        LOG("-----------------------------\n");
+    }
+
+    return status;
 }
 
 static

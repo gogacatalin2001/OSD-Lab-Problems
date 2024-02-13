@@ -92,7 +92,21 @@ typedef struct _THREAD
     struct _PROCESS*        Process;
 
     // The number of times the  thread yielded execution
-    DWORD                   TimesYielded;   // THREADS - 2
+    DWORD                   TimesYielded;           // THREADS - 2
+
+    // Lock for synchronizing the list of children
+    LOCK                    ChildThreadsLock;
+
+    // The list of child threads of the current thread
+    __guarded_by(ChildThreadsLock)
+    LIST_ENTRY              ChildThreads;           // THREADS - 3
+
+    // The entry of the current thread in the list of the parent's children list
+    LIST_ENTRY              ChildThreadListEntry;   // THREADS - 3
+
+    // The parent thread pointer
+    PTHREAD                 ParentThread;           // THREADS - 3
+    //struct _THREAD*         ParentThread;
 } THREAD, *PTHREAD;
 
 //******************************************************************************

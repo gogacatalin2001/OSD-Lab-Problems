@@ -297,6 +297,7 @@ ThreadCreateEx(
     PVOID pStartFunction;
     QWORD firstArg;
     QWORD secondArg;
+    INTR_STATE oldIntrState;
 
     if (NULL == Name)
     {
@@ -398,10 +399,20 @@ ThreadCreateEx(
                                       firstArg,
                                       secondArg,
                                       Process->PagingData->Data.KernelSpace);
+
     if (!SUCCEEDED(status))
     {
         LOG_FUNC_ERROR("_ThreadSetupInitialState", status);
         return status;
+    }
+
+    // THREADS - 3
+    if (pThread->ParentThread != NULL)
+    {
+        // TODO add the thread in the parent child list
+        LockAcquire(&pThread->ParentThread->ChildThreadsLock, &oldIntrState);
+        InsertTailList(&pThread->ParentThread->ChildThreads, &pThread->ChildThreadListEntry);
+        LockRelease(&pThread->ParentThread->ChildThreadsLock, oldIntrState);
     }
 
     if (NULL == pCpu->ThreadData.IdleThread)
@@ -417,8 +428,6 @@ ThreadCreateEx(
     }
 
     *Thread = pThread;
-
-    LOG("Thread [tid = 0x%X] created!\n", pThread->Id);
 
     return status;
 }
@@ -801,13 +810,17 @@ _ThreadInit(
         pThread->Id = _ThreadSystemGetNextTid();
         pThread->State = ThreadStateBlocked;
         pThread->Priority = Priority;
-        pThread->TimesYielded = 0;
+        pThread->TimesYielded = 0;                      // THREADS - 2
+        pThread->ParentThread = GetCurrentThread();     // THREADS - 3
+        InitializeListHead(&pThread->ChildThreads);     // THREADS - 3
 
+        LockInit(&pThread->ChildThreadsLock);           // THREADS - 3
         LockInit(&pThread->BlockLock);
 
         LockAcquire(&m_threadSystemData.AllThreadsLock, &oldIntrState);
         InsertTailList(&m_threadSystemData.AllThreadsList, &pThread->AllList);
         LockRelease(&m_threadSystemData.AllThreadsLock, oldIntrState);
+
     }
     __finally
     {
@@ -824,6 +837,8 @@ _ThreadInit(
 
         LOG_FUNC_END;
     }
+
+    LOG("Thread [tid = 0x%X] created!\n", pThread->Id);
 
     return status;
 }
