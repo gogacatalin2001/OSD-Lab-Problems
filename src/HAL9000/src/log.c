@@ -130,7 +130,7 @@ LogEx(
     va_start(va, FormatBuffer);
 
     // resolve formatted buffer
-    vsnprintf(logBuffer + modifierLength, 
+    vsnprintf(logBuffer + modifierLength,
               LOG_BUF_MAX_SIZE - modifierLength, FormatBuffer, va);
 
     _LogBufferInternal(logBuffer, printFunction);

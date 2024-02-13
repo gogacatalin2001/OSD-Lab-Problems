@@ -10,7 +10,9 @@
 #include "gdtmu.h"
 #include "pe_exports.h"
 
-#define TID_INCREMENT               4
+
+// THREADS - 1
+#define TID_INCREMENT               -1
 
 #define THREAD_TIME_SLICE           1
 
@@ -47,7 +49,8 @@ _ThreadSystemGetNextTid(
     void
     )
 {
-    static volatile TID __currentTid = 0;
+    // THREADS - 1
+    static volatile TID __currentTid = 0x2024;
 
     return _InterlockedExchangeAdd64(&__currentTid, TID_INCREMENT);
 }
@@ -294,6 +297,7 @@ ThreadCreateEx(
     PVOID pStartFunction;
     QWORD firstArg;
     QWORD secondArg;
+    INTR_STATE oldIntrState;
 
     if (NULL == Name)
     {
@@ -395,10 +399,20 @@ ThreadCreateEx(
                                       firstArg,
                                       secondArg,
                                       Process->PagingData->Data.KernelSpace);
+
     if (!SUCCEEDED(status))
     {
         LOG_FUNC_ERROR("_ThreadSetupInitialState", status);
         return status;
+    }
+
+    // THREADS - 3
+    if (pThread->ParentThread != NULL)
+    {
+        // TODO add the thread in the parent child list
+        LockAcquire(&pThread->ParentThread->ChildThreadsLock, &oldIntrState);
+        InsertTailList(&pThread->ParentThread->ChildThreads, &pThread->ChildThreadListEntry);
+        LockRelease(&pThread->ParentThread->ChildThreadsLock, oldIntrState);
     }
 
     if (NULL == pCpu->ThreadData.IdleThread)
@@ -483,6 +497,7 @@ ThreadYield(
     if (!bForcedYield)
     {
         pThread->TickCountEarly++;
+        pThread->TimesYielded++;
     }
     pThread->State = ThreadStateReady;
     _ThreadSchedule();
@@ -557,6 +572,8 @@ ThreadExit(
     {
         LockRelease(&pThread->BlockLock, INTR_OFF);
     }
+
+    LOG("Thread [tid = 0x%X] yielded %u times\n", pThread->Id, pThread->TimesYielded);
 
     pThread->State = ThreadStateDying;
     pThread->ExitStatus = ExitStatus;
@@ -793,12 +810,17 @@ _ThreadInit(
         pThread->Id = _ThreadSystemGetNextTid();
         pThread->State = ThreadStateBlocked;
         pThread->Priority = Priority;
+        pThread->TimesYielded = 0;                      // THREADS - 2
+        pThread->ParentThread = GetCurrentThread();     // THREADS - 3
+        InitializeListHead(&pThread->ChildThreads);     // THREADS - 3
 
+        LockInit(&pThread->ChildThreadsLock);           // THREADS - 3
         LockInit(&pThread->BlockLock);
 
         LockAcquire(&m_threadSystemData.AllThreadsLock, &oldIntrState);
         InsertTailList(&m_threadSystemData.AllThreadsList, &pThread->AllList);
         LockRelease(&m_threadSystemData.AllThreadsLock, oldIntrState);
+
     }
     __finally
     {
@@ -815,6 +837,8 @@ _ThreadInit(
 
         LOG_FUNC_END;
     }
+
+    LOG("Thread [tid = 0x%X] created!\n", pThread->Id);
 
     return status;
 }
