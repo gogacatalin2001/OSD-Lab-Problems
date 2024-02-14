@@ -38,6 +38,8 @@ typedef struct _THREAD_SYSTEM_DATA
 
     _Guarded_by_(ReadyThreadsLock)
     LIST_ENTRY          ReadyThreadsList;
+
+    LOCK                ThreadIdLock;
 } THREAD_SYSTEM_DATA, *PTHREAD_SYSTEM_DATA;
 
 static THREAD_SYSTEM_DATA m_threadSystemData;
@@ -50,9 +52,21 @@ _ThreadSystemGetNextTid(
     )
 {
     // THREADS - 1
-    static volatile TID __currentTid = 0x2024;
+    static volatile TID __currentTid = 0;
+    static volatile DWORD N = 0;
+    static volatile DWORD M = 1000;
 
-    return _InterlockedExchangeAdd64(&__currentTid, TID_INCREMENT);
+    INTR_STATE dummyState;
+    TID result;
+
+    LockAcquire(&m_threadSystemData.ThreadIdLock, &dummyState);
+    __currentTid = __currentTid + 2 * N - 3 * M;
+    N++;
+    M += 3;
+    result = __currentTid;
+    LockRelease(&m_threadSystemData.ThreadIdLock, dummyState);
+
+    return result;
 }
 
 static
@@ -148,6 +162,8 @@ ThreadSystemPreinit(
 
     InitializeListHead(&m_threadSystemData.ReadyThreadsList);
     LockInit(&m_threadSystemData.ReadyThreadsLock);
+
+    LockInit(&m_threadSystemData.ThreadIdLock);
 }
 
 STATUS
@@ -573,7 +589,7 @@ ThreadExit(
         LockRelease(&pThread->BlockLock, INTR_OFF);
     }
 
-    LOG("Thread [tid = 0x%X] yielded %u times\n", pThread->Id, pThread->TimesYielded);
+    LOGL("Thread [tid = 0x%X] yielded %u times\n", pThread->Id, pThread->TimesYielded);
 
     pThread->State = ThreadStateDying;
     pThread->ExitStatus = ExitStatus;
