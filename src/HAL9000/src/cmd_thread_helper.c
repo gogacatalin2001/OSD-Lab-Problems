@@ -137,6 +137,12 @@ void
     LOG("%10s", "Prt ticks|");
     LOG("%10s", "Ttl ticks|");
     LOG("%10s", "Process|");
+/*    LOG("%10s", "TimesBlocked|");
+    LOG("%10s", "TimesYielded|");
+    LOG("%10s", "Parent|");
+    LOG("%10s", "PredCount|");
+    LOG("%10s", "ChildrenCount|");
+    LOG("%10s", "Children|")*/;
     LOG("\n");
 
     status = ThreadExecuteForEachThreadEntry(_CmdThreadPrint, NULL );
@@ -679,7 +685,7 @@ STATUS
     )
 {
     UNREFERENCED_PARAMETER(FunctionContext);
-    PTHREAD pThread = CONTAINING_RECORD(ListEntry, THREAD, ChildThreadListEntry);
+    PTHREAD pThread = CONTAINING_RECORD(ListEntry, THREAD, ChildListEntry);
     LOGL("tid [0x%X]\n", pThread->Id);
 
     return STATUS_SUCCESS;
@@ -711,21 +717,25 @@ STATUS
     LOG("%9U%c", pThread->TickCountEarly, '|');
     LOG("%9U%c", pThread->TickCountCompleted + pThread->TickCountEarly, '|');
     LOG("%9x%c", pThread->Process->Id, '|');
+    // TODO crapa si aici
+    //LOG("%10s", pThread->TimesBlocked, '|');
+    //LOG("%10s", pThread->TimesYielded, '|');
+    //LOG("%10s", pThread->ParentThread != NULL ? pThread->ParentThread->Id : -1, '|');
+    //LOG("%10s", pThread->PredecessorCount, '|');
+    //LOG("%10s", pThread->ChildrenCount, '|');
     LOG("\n");
 
     // THREADS - 3
-    if (!IsListEmpty(&pThread->ChildThreads))
+    if (!IsListEmpty(&pThread->ChildrenList))
     {
         LOG("--------CHILDREN-------------\n");
-
-        LockAcquire(&pThread->ChildThreadsLock , &oldState);
-        status = ForEachElementExecute(&pThread->ChildThreads,
+        LockAcquire(&pThread->ChildrenListLock , &oldState);
+        status = ForEachElementExecute(&pThread->ChildrenList,
             DisplayThreadId,
             FunctionContext,
             FALSE
         );
-        LockRelease(&pThread->ChildThreadsLock, oldState);
-
+        LockRelease(&pThread->ChildrenListLock, oldState);
         LOG("-----------------------------\n");
     }
 

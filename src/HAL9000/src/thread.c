@@ -137,6 +137,12 @@ _ThreadDereference(
     INOUT   PTHREAD                 Thread
     );
 
+static
+void
+_UpdateChildrenAfterParentDelete(
+    IN   PTHREAD    Thread
+);
+
 static FUNC_FreeFunction            _ThreadDestroy;
 
 static
@@ -425,9 +431,9 @@ ThreadCreateEx(
     if (pThread->ParentThread != NULL)
     {
         // TODO add the thread in the parent child list
-        LockAcquire(&pThread->ParentThread->ChildThreadsLock, &oldIntrState);
-        InsertTailList(&pThread->ParentThread->ChildThreads, &pThread->ChildThreadListEntry);
-        LockRelease(&pThread->ParentThread->ChildThreadsLock, oldIntrState);
+        LockAcquire(&pThread->ParentThread->ChildrenListLock, &oldIntrState);
+        InsertTailList(&pThread->ParentThread->ChildrenList, &pThread->ChildListEntry);
+        LockRelease(&pThread->ParentThread->ChildrenListLock, oldIntrState);
     }
 
     if (NULL == pCpu->ThreadData.IdleThread)
@@ -825,11 +831,25 @@ _ThreadInit(
         pThread->Id = _ThreadSystemGetNextTid();
         pThread->State = ThreadStateBlocked;
         pThread->Priority = Priority;
-        pThread->TimesYielded = 0;                      // THREADS - 2
+        pThread->TimesBlocked = 0;                      // THREADS - 3
+        pThread->TimesYielded = 0;                      // THREADS - 3
+        pThread->ChildrenCount = 0;                     // THREADS - 3
         pThread->ParentThread = GetCurrentThread();     // THREADS - 3
-        InitializeListHead(&pThread->ChildThreads);     // THREADS - 3
+        pThread->PredecessorCount = pThread->ParentThread != NULL ? pThread->ParentThread->PredecessorCount + 1 : 0;    // THREADS - 3
+        InitializeListHead(&pThread->ChildrenList);     // THREADS - 3
+        LockInit(&pThread->ChildrenListLock);           // THREADS - 3
 
-        LockInit(&pThread->ChildThreadsLock);           // THREADS - 3
+
+        // TODO crapa
+        /*PTHREAD parent = pThread->ParentThread;
+        if (parent != NULL)
+        {
+            LockAcquire(&parent->ChildrenListLock, &oldIntrState);
+            InsertTailList(&parent->ChildrenList, &pThread->ChildListEntry);
+            parent->ChildrenCount++;
+            LockRelease(&parent->ChildrenListLock, oldIntrState);
+        }*/
+
         LockInit(&pThread->BlockLock);
 
         LockAcquire(&m_threadSystemData.AllThreadsLock, &oldIntrState);
@@ -1230,6 +1250,9 @@ _ThreadDestroy(
     RemoveEntryList(&pThread->AllList);
     LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
 
+    // THREADS - 4
+    _UpdateChildrenAfterParentDelete(pThread);
+
     // This must be done before removing the thread from the process list, else
     // this may be the last thread and the process VAS will be freed by the time
     // ProcessRemoveThreadFromList - this function also dereferences the process
@@ -1277,4 +1300,30 @@ _ThreadKernelFunction(
 
     ThreadExit(exitStatus);
     NOT_REACHED;
+}
+
+// THREADS - 4
+static
+void
+_UpdateChildrenAfterParentDelete(
+    IN   PTHREAD    Thread
+)
+{
+    ASSERT(Thread != NULL);
+
+    INTR_STATE dummyState;
+    LIST_ITERATOR iter;
+    PLIST_ENTRY pEntry = NULL;
+
+    LockAcquire(&Thread->ChildrenListLock, &dummyState);
+    ListIteratorInit(&Thread->ChildrenList, &iter);
+    while ((pEntry = ListIteratorNext(&iter)) != NULL)
+    {
+        PTHREAD child = CONTAINING_RECORD(pEntry, THREAD, ChildListEntry);
+        child->PredecessorCount--;
+        child->ParentThread = Thread->ParentThread;
+    }
+    LockRelease(&Thread->ChildrenListLock, dummyState);
+
+    LOGL("Children of thread [tid=0x%X] have been updated!\n");
 }
