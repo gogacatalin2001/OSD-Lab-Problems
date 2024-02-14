@@ -11,10 +11,9 @@
 #include "pe_exports.h"
 
 
-// THREADS - 1
-#define TID_INCREMENT               -1
+#define TID_INCREMENT               1
 
-#define THREAD_TIME_SLICE           1
+#define THREAD_TIME_SLICE           10  // Threads - 2
 
 extern void ThreadStart();
 
