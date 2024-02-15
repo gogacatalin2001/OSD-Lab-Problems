@@ -142,7 +142,6 @@ void
     LOG("%10s", "Parent|");
     LOG("%10s", "PredCount|");
     LOG("%10s", "ChildrenCount|");
-    LOG("%10s", "Children|");
     LOG("\n");
 
     status = ThreadExecuteForEachThreadEntry(_CmdThreadPrint, NULL );

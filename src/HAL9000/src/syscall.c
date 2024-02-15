@@ -7,6 +7,8 @@
 #include "mmu.h"
 #include "process_internal.h"
 #include "dmp_cpu.h"
+#include "thread.h"
+#include "process.h"
 
 extern void SyscallEntry();
 
@@ -170,3 +172,69 @@ SyscallValidateInterface(
 }
 
 // STUDENT TODO: implement the rest of the syscalls
+
+STATUS
+SyscallThreadExit(
+    IN      STATUS                  ExitStatus
+)
+{
+    ThreadExit(ExitStatus);
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallThreadGetTid(
+    IN_OPT  UM_HANDLE               ThreadHandle,
+    OUT     TID* ThreadId
+)
+{
+    UNREFERENCED_PARAMETER(ThreadHandle);
+    UNREFERENCED_PARAMETER(ThreadId);
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallProcessExit(
+    IN      STATUS                  ExitStatus
+)
+{
+    PPROCESS process = GetCurrentProcess();
+    process->TerminationStatus = ExitStatus;
+    ProcessTerminate(process);
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallFileWrite(
+    IN  UM_HANDLE                   FileHandle,
+    IN_READS_BYTES(BytesToWrite)
+    PVOID                           Buffer,
+    IN  QWORD                       BytesToWrite,
+    OUT QWORD*                      BytesWritten
+)
+{
+    if (FileHandle != UM_FILE_HANDLE_STDOUT)
+    {
+        return STATUS_INVALID_PARAMETER1;
+    }
+    if (!SUCCEEDED(MmuIsBufferValid(Buffer, sizeof(BytesToWrite), PAGE_RIGHTS_READ, GetCurrentProcess())))
+    {
+        return STATUS_INVALID_PARAMETER2;
+    }
+    if (((char*)Buffer)[BytesToWrite - 1] != 0)
+    {
+        return STATUS_INVALID_PARAMETER2;
+    }
+    if (strlen((char*)Buffer) != BytesToWrite - 1)
+    {
+        return STATUS_INVALID_PARAMETER2;
+    }
+    if (!SUCCEEDED(MmuIsBufferValid(BytesWritten, sizeof(QWORD), PAGE_RIGHTS_WRITE, GetCurrentProcess())))
+    {
+        return STATUS_INVALID_PARAMETER4;
+    }
+    LOGL("[%s] %s", GetCurrentProcess()->ProcessName, Buffer);
+    *BytesWritten = BytesToWrite;
+
+    return STATUS_SUCCESS;
+}

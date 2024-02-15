@@ -8,6 +8,7 @@
 #include "cpumu.h"
 #include "dmp_cpu.h"
 #include "process.h"
+#include "process_internal.h"
 
 #define UNDEFINED_INTERRUPT_TEXT                "UNKNOWN INTERRUPT"
 #define STACK_BYTES_TO_DUMP_ON_EXCEPTION        0x100
@@ -169,6 +170,16 @@ _IsrExceptionHandler(
         for (DWORD i = 0; i < noOfStackElementsToDump; ++i)
         {
             LOG("[0x%X]: 0x%X\n", &pCurrentStackItem[i], pCurrentStackItem[i]);
+        }
+
+        if (!GdtIsSegmentPrivileged((WORD)StackPointer->Registers.CS))
+        {
+            LOGL("Process [pid=0x%X] encountered exception 0x%X[exceptionName=%s] and will be terminated!\n",
+                GetCurrentProcess()->Id,
+                InterruptIndex,
+                EXCEPTION_NAME[InterruptIndex]
+            );
+            ProcessTerminate(NULL);
         }
     }
 
