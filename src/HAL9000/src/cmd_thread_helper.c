@@ -137,12 +137,12 @@ void
     LOG("%10s", "Prt ticks|");
     LOG("%10s", "Ttl ticks|");
     LOG("%10s", "Process|");
-/*    LOG("%10s", "TimesBlocked|");
+    LOG("%10s", "TimesBlocked|");
     LOG("%10s", "TimesYielded|");
     LOG("%10s", "Parent|");
     LOG("%10s", "PredCount|");
     LOG("%10s", "ChildrenCount|");
-    LOG("%10s", "Children|")*/;
+    LOG("%10s", "Children|");
     LOG("\n");
 
     status = ThreadExecuteForEachThreadEntry(_CmdThreadPrint, NULL );
@@ -718,11 +718,11 @@ STATUS
     LOG("%9U%c", pThread->TickCountCompleted + pThread->TickCountEarly, '|');
     LOG("%9x%c", pThread->Process->Id, '|');
     // TODO crapa si aici
-    //LOG("%10s", pThread->TimesBlocked, '|');
-    //LOG("%10s", pThread->TimesYielded, '|');
-    //LOG("%10s", pThread->ParentThread != NULL ? pThread->ParentThread->Id : -1, '|');
-    //LOG("%10s", pThread->PredecessorCount, '|');
-    //LOG("%10s", pThread->ChildrenCount, '|');
+    LOG("%10x%c", pThread->TimesBlocked, '|');
+    LOG("%10x%c", pThread->TimesYielded, '|');
+    LOG("%10x%c", pThread->ParentThread != NULL ? pThread->ParentThread->Id : -1, '|');
+    LOG("%10x%c", pThread->PredecessorCount, '|');
+    LOG("%10x%c", pThread->ChildrenCount, '|');
     LOG("\n");
 
     // THREADS - 3
