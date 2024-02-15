@@ -58,6 +58,9 @@ typedef struct _PROCESS
 
     // VaSpace used only for UM virtual memory allocations
     struct _VMM_RESERVATION_SPACE*  VaSpace;
+
+    // Number of page faults solved
+    DWORD                           SolvedPageFaultsCount;  // Userprog - 4
 } PROCESS, *PPROCESS;
 
 //******************************************************************************

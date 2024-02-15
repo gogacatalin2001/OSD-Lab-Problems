@@ -71,6 +71,24 @@ SyscallHandler(
             status = SyscallValidateInterface((SYSCALL_IF_VERSION)*pSyscallParameters);
             break;
         // STUDENT TODO: implement the rest of the syscalls
+        case SyscallIdThreadExit:
+            status = SyscallThreadExit((STATUS)pSyscallParameters[0]);
+            break;
+        case SyscallIdFileWrite:
+            status = SyscallFileWrite((UM_HANDLE)pSyscallParameters[0], (PVOID)pSyscallParameters[1], (QWORD)pSyscallParameters[2], (QWORD*)pSyscallParameters[3]);
+            break;
+        case SyscallIdGetCurrentThreadId:
+            status = SyscallGetCurrentThreadId((TID*)pSyscallParameters[0]);
+            break;
+        case SyscallIdGetThreadInformation:
+            status = SyscallGetThreadInformation((TID)pSyscallParameters[0], (DWORD*)pSyscallParameters[1], (DWORD*)pSyscallParameters[2], (TID*)pSyscallParameters[3], (DWORD*)pSyscallParameters[4], (DWORD*)pSyscallParameters[5]);
+            break;
+        case SyscallIdProcessExit:
+            status = SyscallProcessExit((STATUS)pSyscallParameters[0]);
+            break;
+        case SyscallIdGetSolvedPageFaultCount:
+            status = SyscallGetSolvedPageFaultCount((DWORD*)pSyscallParameters[0]);
+            break;
         default:
             LOG_ERROR("Unimplemented syscall called from User-space!\n");
             status = STATUS_UNSUPPORTED;
@@ -184,7 +202,7 @@ SyscallThreadExit(
 }
 
 STATUS
-SyscallGetCurrentThreadTid(
+SyscallGetCurrentThreadId(
     OUT     TID* ThreadId
 )
 {
@@ -193,6 +211,53 @@ SyscallGetCurrentThreadTid(
         return STATUS_INVALID_PARAMETER1;
     }
     *ThreadId = GetCurrentThread()->Id;
+
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallGetThreadInformation(
+    IN TID ThreadId,
+    OUT DWORD* TimesYielded,
+    OUT DWORD* TimesBlocked,
+    OUT TID* ParentId,
+    OUT DWORD* ChildrenCount,
+    OUT DWORD* PredecessorCount
+)
+{
+    PTHREAD pThread = NULL;
+    STATUS status = ThreadGetById(ThreadId, &pThread);
+
+    if (!SUCCEEDED(MmuIsBufferValid(TimesYielded, sizeof(DWORD), PAGE_RIGHTS_WRITE, GetCurrentProcess())))
+    {
+        return STATUS_INVALID_PARAMETER2;
+    }
+    if (!SUCCEEDED(MmuIsBufferValid(TimesBlocked, sizeof(DWORD), PAGE_RIGHTS_WRITE, GetCurrentProcess())))
+    {
+        return STATUS_INVALID_PARAMETER3;
+    }
+    if (!SUCCEEDED(MmuIsBufferValid(ParentId, sizeof(TID), PAGE_RIGHTS_WRITE, GetCurrentProcess())))
+    {
+        return STATUS_INVALID_PARAMETER4;
+    }
+    if (!SUCCEEDED(MmuIsBufferValid(ChildrenCount, sizeof(DWORD), PAGE_RIGHTS_WRITE, GetCurrentProcess())))
+    {
+        return STATUS_INVALID_PARAMETER5;
+    }
+    if (!SUCCEEDED(MmuIsBufferValid(PredecessorCount, sizeof(DWORD), PAGE_RIGHTS_WRITE, GetCurrentProcess())))
+    {
+        return STATUS_INVALID_PARAMETER6;
+    }
+
+    if (!SUCCEEDED(status))
+    {
+        return status;
+    }
+    *TimesYielded = pThread->TimesYielded;
+    *TimesBlocked = pThread->TimesBlocked;
+    *ParentId = pThread->ParentThread ? pThread->ParentThread->Id : 0;
+    *ChildrenCount = pThread->ChildrenCount;
+    *PredecessorCount = pThread->PredecessorCount;
 
     return STATUS_SUCCESS;
 }
@@ -240,5 +305,19 @@ SyscallFileWrite(
     LOGL("[%s] %s", GetCurrentProcess()->ProcessName, Buffer);
     *BytesWritten = BytesToWrite;
 
+    return STATUS_SUCCESS;
+}
+
+STATUS
+SyscallGetSolvedPageFaultCount(
+    OUT DWORD* SolvedPageFaultCount
+)
+{
+    if (!SUCCEEDED(MmuIsBufferValid(SolvedPageFaultCount, sizeof(DWORD), PAGE_RIGHTS_WRITE, GetCurrentProcess())))
+    {
+        return STATUS_INVALID_PARAMETER1;
+    }
+
+    *SolvedPageFaultCount = GetCurrentProcess()->SolvedPageFaultsCount;
     return STATUS_SUCCESS;
 }

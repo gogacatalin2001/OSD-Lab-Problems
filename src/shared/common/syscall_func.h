@@ -321,3 +321,8 @@ SyscallGetThreadInformation(
     OUT DWORD* ChildrenCount,
     OUT DWORD* PredecessorCount
 );
+
+STATUS
+SyscallGetSolvedPageFaultCount(
+    OUT DWORD* SolvedPageFaultCount
+);

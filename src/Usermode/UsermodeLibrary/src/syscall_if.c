@@ -219,3 +219,11 @@ SyscallGetThreadInformation(
     return SyscallEntry(SyscallIdGetThreadInformation, ThreadId, TimesYielded, TimesBlocked, ParentId, ChildrenCount, PredecessorCount);
 }
 
+
+STATUS
+SyscallGetSolvedPageFaultCount(
+    OUT DWORD* SolvedPageFaultCount
+)
+{
+    return SyscallEntry(SyscallIdGetSolvedPageFaultCount, SolvedPageFaultCount);
+}

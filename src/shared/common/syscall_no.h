@@ -19,6 +19,7 @@ typedef enum _SYSCALL_ID
     SyscallIdProcessGetPid,
     SyscallIdProcessWaitForTermination,
     SyscallIdProcessCloseHandle,
+    SyscallIdGetSolvedPageFaultCount,
 
     // Memory management
     SyscallIdVirtualAlloc,

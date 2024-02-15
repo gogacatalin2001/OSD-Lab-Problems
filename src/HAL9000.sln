@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30517.126
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34601.278
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HAL9000", "HAL9000\HAL9000.vcxproj", "{79A21DCA-19AF-4F8E-9B83-62D7CF504104}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -1090,8 +1090,8 @@ Global
 		{343E7816-3E2E-4A46-9500-730E5CC7CCB5}.Userprog|x64.Build.0 = Debug|x64
 		{343E7816-3E2E-4A46-9500-730E5CC7CCB5}.VirtualMemory|x64.ActiveCfg = Debug|x64
 		{343E7816-3E2E-4A46-9500-730E5CC7CCB5}.VirtualMemory|x64.Build.0 = Debug|x64
-		{CA44C37A-1730-447F-8975-3DF40D559310}.CommonLibTests|x64.ActiveCfg = DebugNonNative|x64
-		{CA44C37A-1730-447F-8975-3DF40D559310}.CommonLibTests|x64.Build.0 = DebugNonNative|x64
+		{CA44C37A-1730-447F-8975-3DF40D559310}.CommonLibTests|x64.ActiveCfg = Debug|x64
+		{CA44C37A-1730-447F-8975-3DF40D559310}.CommonLibTests|x64.Build.0 = Debug|x64
 		{CA44C37A-1730-447F-8975-3DF40D559310}.Threads|x64.ActiveCfg = Debug|x64
 		{CA44C37A-1730-447F-8975-3DF40D559310}.Threads|x64.Build.0 = Debug|x64
 		{CA44C37A-1730-447F-8975-3DF40D559310}.Userprog|x64.ActiveCfg = DebugNoLocks|x64

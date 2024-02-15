@@ -511,6 +511,7 @@ _ProcessInit(
         // with the system management in case something goes wrong (PID + full process
         // list management)
         pProcess->Id = _ProcessSystemRetrieveNextPid();
+        pProcess->SolvedPageFaultsCount = 0;
 
         MutexAcquire(&m_processData.ProcessListLock);
         InsertTailList(&m_processData.ProcessList, &pProcess->NextProcess);

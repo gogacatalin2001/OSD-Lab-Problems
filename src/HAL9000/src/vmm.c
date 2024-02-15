@@ -853,6 +853,8 @@ VmmSolvePageFault(
                 pCpu->PageFaults = pCpu->PageFaults + 1;
             }
             bSolvedPageFault = TRUE;
+
+            _InterlockedIncrement(&GetCurrentProcess()->SolvedPageFaultsCount);     // Userprog - 4
         }
     }
     __finally

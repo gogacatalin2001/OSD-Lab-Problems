@@ -308,3 +308,9 @@ void
 ThreadSetPriority(
     IN      THREAD_PRIORITY     NewPriority
     );
+
+STATUS
+ThreadGetById(
+    IN      TID         Id,
+    OUT     PTHREAD* Thread
+);
