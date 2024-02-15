@@ -306,3 +306,18 @@ SyscallFileWrite(
     IN  QWORD                       BytesToWrite,
     OUT QWORD*                      BytesWritten
     );
+
+STATUS
+SyscallGetCurrentThreadId(
+    OUT TID* ThreadId
+);
+
+STATUS
+SyscallGetThreadInformation(
+    IN TID ThreadId,
+    OUT DWORD* TimesYielded,
+    OUT DWORD* TimesBlocked,
+    OUT TID* ParentId,
+    OUT DWORD* ChildrenCount,
+    OUT DWORD* PredecessorCount
+);

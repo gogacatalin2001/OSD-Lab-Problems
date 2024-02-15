@@ -716,7 +716,6 @@ STATUS
     LOG("%9U%c", pThread->TickCountEarly, '|');
     LOG("%9U%c", pThread->TickCountCompleted + pThread->TickCountEarly, '|');
     LOG("%9x%c", pThread->Process->Id, '|');
-    // TODO crapa si aici
     LOG("%10x%c", pThread->TimesBlocked, '|');
     LOG("%10x%c", pThread->TimesYielded, '|');
     LOG("%10x%c", pThread->ParentThread != NULL ? pThread->ParentThread->Id : -1, '|');

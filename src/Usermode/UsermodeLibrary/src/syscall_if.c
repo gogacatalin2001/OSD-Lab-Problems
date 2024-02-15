@@ -196,3 +196,26 @@ SyscallFileWrite(
 {
     return SyscallEntry(SyscallIdFileWrite, FileHandle, Buffer, BytesToWrite, BytesWritten);
 }
+
+STATUS
+SyscallGetCurrentThreadTid(
+    OUT TID* ThreadId
+)
+{
+    return SyscallEntry(SyscallIdGetCurrentThreadId, ThreadId);
+}
+
+
+STATUS
+SyscallGetThreadInformation(
+    IN TID ThreadId,
+    OUT DWORD* TimesYielded,
+    OUT DWORD* TimesBlocked,
+    OUT TID* ParentId,
+    OUT DWORD* ChildrenCount,
+    OUT DWORD* PredecessorCount
+)
+{
+    return SyscallEntry(SyscallIdGetThreadInformation, ThreadId, TimesYielded, TimesBlocked, ParentId, ChildrenCount, PredecessorCount);
+}
+

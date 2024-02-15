@@ -828,25 +828,26 @@ _ThreadInit(
 
         strcpy(pThread->Name, Name);
 
+        PTHREAD parent = GetCurrentThread();
+
         pThread->Id = _ThreadSystemGetNextTid();
         pThread->State = ThreadStateBlocked;
         pThread->Priority = Priority;
         pThread->TimesBlocked = 0;                      // THREADS - 3
         pThread->TimesYielded = 0;                      // THREADS - 3
         pThread->ChildrenCount = 0;                     // THREADS - 3
-        pThread->ParentThread = GetCurrentThread();     // THREADS - 3
-        pThread->PredecessorCount = pThread->ParentThread != NULL ? pThread->ParentThread->PredecessorCount + 1 : 0;    // THREADS - 3
+        pThread->ParentThread = parent;                 // THREADS - 3
+        pThread->PredecessorCount = 0;                  // THREADS - 3
         InitializeListHead(&pThread->ChildrenList);     // THREADS - 3
         LockInit(&pThread->ChildrenListLock);           // THREADS - 3
 
 
-        // TODO crapa
-        /*PTHREAD parent = pThread->ParentThread;
-        if (parent != NULL)
+        /*if (parent != NULL)
         {
             LockAcquire(&parent->ChildrenListLock, &oldIntrState);
             InsertTailList(&parent->ChildrenList, &pThread->ChildListEntry);
             parent->ChildrenCount++;
+            pThread->PredecessorCount = parent->PredecessorCount + 1;
             LockRelease(&parent->ChildrenListLock, oldIntrState);
         }*/
 
@@ -1326,4 +1327,32 @@ _UpdateChildrenAfterParentDelete(
     LockRelease(&Thread->ChildrenListLock, dummyState);
 
     LOGL("Children of thread [tid=0x%X] have been updated!\n");
+}
+
+STATUS
+ThreadGetById(
+    IN      TID         Id,
+    OUT     PTHREAD* Thread
+)
+{
+    LIST_ITERATOR iter;
+    PLIST_ENTRY pEntry = NULL;
+    INTR_STATE oldState;
+    PTHREAD foundThread = NULL;
+
+    LockAcquire(&m_threadSystemData.AllThreadsLock, &oldState);
+    ListIteratorInit(&m_threadSystemData.AllThreadsList, &iter);
+    while ((pEntry = ListIteratorNext(&iter)) != NULL)
+    {
+        PTHREAD pThread = CONTAINING_RECORD(pEntry, THREAD, AllList);
+        if (pThread->Id == Id)
+        {
+            foundThread = pThread;
+            break;
+        }
+    }
+    LockRelease(&m_threadSystemData.AllThreadsLock, oldState);
+    *Thread = foundThread;
+
+    return foundThread ? STATUS_ELEMENT_FOUND : STATUS_FILE_NOT_FOUND;
 }

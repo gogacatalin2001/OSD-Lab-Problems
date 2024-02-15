@@ -7,6 +7,7 @@
 #include "mmu.h"
 #include "process_internal.h"
 #include "dmp_cpu.h"
+#include "thread_internal.h"
 #include "thread.h"
 #include "process.h"
 
@@ -183,13 +184,16 @@ SyscallThreadExit(
 }
 
 STATUS
-SyscallThreadGetTid(
-    IN_OPT  UM_HANDLE               ThreadHandle,
+SyscallGetCurrentThreadTid(
     OUT     TID* ThreadId
 )
 {
-    UNREFERENCED_PARAMETER(ThreadHandle);
-    UNREFERENCED_PARAMETER(ThreadId);
+    if (!SUCCEEDED(MmuIsBufferValid(ThreadId, sizeof(TID), PAGE_RIGHTS_WRITE, GetCurrentProcess())))
+    {
+        return STATUS_INVALID_PARAMETER1;
+    }
+    *ThreadId = GetCurrentThread()->Id;
+
     return STATUS_SUCCESS;
 }
 
